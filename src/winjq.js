@@ -251,13 +251,13 @@ var $ = (function(){
 		},
 		hide: function(){
 			this.each(function(){
-				$(this[0]).css('display', 'none')
+				$(this).css('display', 'none')
 			})
 			return this;
 		},
 		show: function(){
 			this.each(function(){
-				$(this[0]).css('display', 'block')
+				$(this).css('display', 'block')
 			})
 			return this;
 		},
