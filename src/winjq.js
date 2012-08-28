@@ -250,10 +250,16 @@ var $ = (function(){
 			}
 		},
 		hide: function(){
-			$(this[0]).css('display', 'none');
+			this.each(function(){
+				$(this[0]).css('display', 'none')
+			})
+			return this;
 		},
 		show: function(){
-			$(this[0]).css('display', 'block');
+			this.each(function(){
+				$(this[0]).css('display', 'block')
+			})
+			return this;
 		},
 		_util: {
 			is: {
