@@ -455,7 +455,7 @@ var $ = (function(){
 			$.fn.ajax( options );
 			return this;
 		},
-		get: function(url, success, error){
+		get: function(r_url, r_success, r_error){
 			var options = {
 				method: 'GET',
 				url: r_url,
