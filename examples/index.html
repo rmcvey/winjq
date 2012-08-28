@@ -13,10 +13,10 @@
 				});
 
 				// load remote content directly into an element
-				$('#placeholder').load('/response.html');
+				$('#placeholder').load('ajax/response.html');
 
 				// request JSON content
-				$.getJSON('/response.json', function(data){
+				$.getJSON('ajax/response.json', function(data){
 					var jresponse = "";
 					for(var i = 0; i < data.length; i++){
 						var template_txt = $('#json-template').html();
@@ -47,7 +47,7 @@
 	<body>
 		<div class="border">
 			<h2>Link Example</h2>
-			<a href="http://local.testsite.com/foo">Foo</a> | <a href="http://www.example.com/foo" onclick="track(this); return false;">Example Foo</a>
+			<a href="/foo">Foo</a> | <a href="http://www.example.com/foo" onclick="track(this); return false;">Example Foo</a>
 		</div>
 		<div id="cart" class="border">
 			<h2>Cart Example</h2>
