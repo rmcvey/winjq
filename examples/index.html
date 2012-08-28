@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en-US">
+	<head>
+		<meta charset="utf-8" />
+		<title>WinJQ Examples</title>
+		<script type="text/javascript" src="/winjq.js"></script>
+		<script type="text/javascript">
+			$(function(){
+				// use markup as a template
+				$('body > #template').supplant({
+				    'name': 'This is the title',
+				    'body': 'This is the body'
+				});
+
+				// load remote content directly into an element
+				$('#placeholder').load('/response.html');
+
+				// request JSON content
+				$.getJSON('/response.json', function(data){
+					var jresponse = "";
+					for(var i = 0; i < data.length; i++){
+						var template_txt = $('#json-template').html();
+						jresponse += template_txt.supplant(data[i]);
+					}
+					$('#json-output').append(jresponse);
+				});
+
+				// attach an onclick event handler
+				$('h2').click(function(){
+					console.log(this);
+				});
+			});
+		</script>
+		<style type='text/css'>
+			body{
+				font-family:'Helvetica Nueue', Helvetica, Arial, sans-serif;
+				font-weight: 100;
+			}
+			h1,h2,h3,h4,h5{font-weight:100;border-bottom:1px solid #ddd;}
+			a{color:black;width:200px;}
+			.hide{
+				display:none;
+			}
+			.border{border:1px solid #ccc;border-radius:5px;margin:10px;padding:10px;}
+		</style>
+	</head>
+	<body>
+		<div class="border">
+			<h2>Link Example</h2>
+			<a href="http://local.testsite.com/foo">Foo</a> | <a href="http://www.example.com/foo" onclick="track(this); return false;">Example Foo</a>
+		</div>
+		<div id="cart" class="border">
+			<h2>Cart Example</h2>
+			<div class="product">
+				<select class="quantity">
+					<option>1</option>
+					<option>2</option>
+					<option>3</option>
+				</select>
+				<button class="addToCart">Shoes</button>
+			</div>
+			<div class="product">
+				<select class="quantity">
+					<option>1</option>
+					<option>2</option>
+					<option>3</option>
+				</select>
+				<button class="addToCart">Socks</button>
+			</div>
+		</div>
+		<div id="template" class="hide">
+			<h2>{name}</h2>
+			<p>{body}</p>
+		</div>
+		<div id="placeholder" class="border hide">Placeholder</div>
+		<div id="json-container" class="hide">
+
+			<div id="json-template">
+				<h3>{name}</h3>
+				<p>{body}</p>
+			</div>
+		</div>
+		<div class="border" id="json-output">
+			<h2>$.getJSON Output</h2>
+		</div>
+	</body>
+</html>
