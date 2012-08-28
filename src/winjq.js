@@ -90,6 +90,7 @@ var $ = (function(){
 				return this;
 			}
 			if( selector && typeof selector['toUpperCase'] !== 'undefined' ) {
+				this.selector = selector;
 				var elems = context.querySelectorAll(selector), i = 0;
 				this.length = elems.length;
 				for(; i < this.length; i++){
@@ -281,6 +282,9 @@ var $ = (function(){
 				});
 			}
 		},
+		find: function(selector){
+			return $(selector, this[0]);
+		},
 		merge: function(obj1, obj2){
 			var attr;
 			for(attr in obj2){
@@ -289,6 +293,12 @@ var $ = (function(){
 				}
 			}
 			return obj1;
+		},
+		parent: function(){
+			return $(this[0].parentNode);
+		},
+		parents: function(selector){
+			
 		},
 		require: function(script, callback){
 			(function loadscript(d, source, cb){
@@ -309,6 +319,12 @@ var $ = (function(){
 			}
 			this[0].innerHTML = toStaticHTML( val );
 			return this;
+		},
+		data: function(key, val){
+			this.attr('data', '{'+key+':'+val+'}')
+		},
+		get: function(index){
+			return this.eq( index )[0];
 		},
 		attr: function(key, val){
 			if( !this._util.is.object(key) && typeof val === 'undefined' ){
@@ -332,6 +348,14 @@ var $ = (function(){
 				}
 			}
 			return this;
+		},
+		val: function( tval ){
+			if( tval !== undefined ){
+				this.get(0).value = tval;
+				return this;
+			} else {
+				return this.get(0).value;
+			}
 		},
 		each: function(collection, callback){
 			var i = 0;
@@ -438,86 +462,6 @@ var $ = (function(){
 	};
 
 	$.extend({
-		keyStr: "ABCDEFGHIJKLMNOP" +
-		               "QRSTUVWXYZabcdef" +
-		               "ghijklmnopqrstuv" +
-		               "wxyz0123456789+/" +
-		               "=",
-		encode64: function(input) {
-		     input = escape(input);
-		     var output = "";
-		     var chr1, chr2, chr3 = "";
-		     var enc1, enc2, enc3, enc4 = "";
-		     var i = 0;
-
-		     do {
-		        chr1 = input.charCodeAt(i++);
-		        chr2 = input.charCodeAt(i++);
-		        chr3 = input.charCodeAt(i++);
-
-		        enc1 = chr1 >> 2;
-		        enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
-		        enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
-		        enc4 = chr3 & 63;
-
-		        if (isNaN(chr2)) {
-		           enc3 = enc4 = 64;
-		        } else if (isNaN(chr3)) {
-		           enc4 = 64;
-		        }
-
-		        output = output +
-		           this.keyStr.charAt(enc1) +
-		           this.keyStr.charAt(enc2) +
-		           this.keyStr.charAt(enc3) +
-		           this.keyStr.charAt(enc4);
-		        chr1 = chr2 = chr3 = "";
-		        enc1 = enc2 = enc3 = enc4 = "";
-		     } while (i < input.length);
-
-		     return output;
-		},
-		decode64: function(input) {
-		     var output = "";
-		     var chr1, chr2, chr3 = "";
-		     var enc1, enc2, enc3, enc4 = "";
-		     var i = 0;
-
-		     // remove all characters that are not A-Z, a-z, 0-9, +, /, or =
-		     var base64test = /[^A-Za-z0-9\+\/\=]/g;
-		     if (base64test.exec(input)) {
-		        alert("There were invalid base64 characters in the input text.\n" +
-		              "Valid base64 characters are A-Z, a-z, 0-9, '+', '/',and '='\n" +
-		              "Expect errors in decoding.");
-		     }
-		     input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
-
-		     do {
-		        enc1 = this.keyStr.indexOf(input.charAt(i++));
-		        enc2 = this.keyStr.indexOf(input.charAt(i++));
-		        enc3 = this.keyStr.indexOf(input.charAt(i++));
-		        enc4 = this.keyStr.indexOf(input.charAt(i++));
-
-		        chr1 = (enc1 << 2) | (enc2 >> 4);
-		        chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
-		        chr3 = ((enc3 & 3) << 6) | enc4;
-
-		        output = output + String.fromCharCode(chr1);
-
-		        if (enc3 != 64) {
-		           output = output + String.fromCharCode(chr2);
-		        }
-		        if (enc4 != 64) {
-		           output = output + String.fromCharCode(chr3);
-		        }
-
-		        chr1 = chr2 = chr3 = "";
-		        enc1 = enc2 = enc3 = enc4 = "";
-
-		     } while (i < input.length);
-
-		     return unescape(output);
-		},
 		each: function( object, callback ){
 			return $.fn.each( object, callback );
 		},
@@ -569,6 +513,51 @@ var $ = (function(){
 				(d.getElementsByTagName('head')[0] || d.getElementByTagName('body')[0]).appendChild(script);
 			})(document, script, callback);
 			return this;
+		},
+		url: function(){
+			var _href = location.href;
+			var _path = location.pathname;
+			var _qs = location.search.replace(/\?/, '');
+			var _hash = location.hash.replace(/\#/, '');
+
+			var _parse = function(string){
+				var params = string.split('&');
+				var holder = [];
+
+				for(var i = 0; i < params.length; i++){
+						var temp 	= params[i].split('=');
+						var key 	= temp[0];
+						var val 		= temp[1];
+						holder[key] = val;
+				}
+				return holder;
+			};
+
+			var _qs_params 	= _parse(_qs);
+			var _hash_params = _parse(_hash);
+
+			return {
+				href:_href,
+				path:_path,
+				get:function(name){
+					var retval = null;
+					if(_qs_params[name] !== undefined){
+						retval = _qs_params[name];
+					} else if(_hash_params[name] !== undefined) {
+						retval = _hash_params[name];
+					}
+					return retval;
+				},
+				go:function(loc){
+					location.href = loc;
+				},
+				back:function(item){
+					if(item !== undefined){
+						item = -1;
+					}
+					history.go(item);
+				}
+			};
 		},
 		fireReady: function(){
 			if( $.fn.domLoaded === true ){
