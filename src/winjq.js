@@ -156,6 +156,20 @@ var $ = (function(){
 		last: function(){
 			return this.eq(-1);
 		},
+		fadeOut: function(speed, callback){
+			this.each(function(){
+				WinJS.UI.Animation.fadeOut();
+			})
+			callback.apply(this, [this]);
+			return this;
+		},
+		fadeIn: function(speed, callback){
+			this.each(function(){
+				WinJS.UI.Animation.fadeIn();
+			})
+			callback.apply(this, [this]);
+			return this;
+		},
 		append: function(node){
 			if(this._util.is.array( node )){
 				for(var x = 0; x < node.length; x++){
@@ -637,7 +651,7 @@ var $ = (function(){
 			})(document, script, callback);
 			return this;
 		},
-		url: function(){
+		url: (function(){
 			var _href = location.href;
 			var _path = location.pathname;
 			var _qs = location.search.replace(/\?/, '');
@@ -655,14 +669,14 @@ var $ = (function(){
 				}
 				return holder;
 			};
-
+			console.log('hi')
 			var _qs_params 	= _parse(_qs),
 				_hash_params = _parse(_hash);
 
 			return {
 				href:_href,
 				path:_path,
-				get:function(name){
+				get: function(name){
 					var retval = null;
 					if(_qs_params[name] !== undefined){
 						retval = _qs_params[name];
@@ -681,7 +695,7 @@ var $ = (function(){
 					history.go(item);
 				}
 			};
-		},
+		})(),
 		fireReady: function(){
 			if( $.fn.domLoaded === true ){
 				for(var z = 0; z < $.fn.readyList.length; z++){
