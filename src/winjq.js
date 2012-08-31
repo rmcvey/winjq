@@ -669,7 +669,7 @@ var $ = (function(){
 				}
 				return holder;
 			};
-			console.log('hi')
+
 			var _qs_params 	= _parse(_qs),
 				_hash_params = _parse(_hash);
 
