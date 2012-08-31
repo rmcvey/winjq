@@ -1,15 +1,3 @@
-;(function enhance(){
-	String.prototype.supplant = function(o){
-		o = o || {}
-		return this.replace(/{([^{}]*)}/g,
-	        function (bracketed, clean) {
-	            var object_value = o[clean];
-	            return ['string', 'number'].indexOf((typeof object_value)) > -1 ? object_value : bracketed;
-	        }
-	    );
-	}
-})();
-
 // Implement the identical functionality for filter and not
 function winnow( elements, qualifier, keep ) {
 	qualifier = qualifier || 0;
@@ -105,6 +93,7 @@ var $ = (function(){
 
 			if ( selector.nodeType ) {
 				this.context = this[0] = selector;
+				this.selector = this[0];
 				this.length = 1;
 				return this;
 			}
@@ -132,6 +121,7 @@ var $ = (function(){
 				}
 			} else {
 				this.length = 0;
+				this.selector = 'not known'
 				this[0] = undefined;
 			}
 			return this.prototype;
@@ -272,12 +262,21 @@ var $ = (function(){
 			}
 			return this;
 		},
+		_supplant: function(o, text){
+			o = o || {}
+			var text = text || this.html();
+			return text.replace(/{([^{}]*)}/g,
+		        function (bracketed, clean) {
+		            var object_value = o[clean];
+		            return ['string', 'number'].indexOf((typeof object_value)) > -1 ? object_value : bracketed;
+		        }
+		    );
+		},
 		supplant: function(obj) {
 			var tmp = $(this[0]),
 				text = tmp.html(),
-				supplanted = text.supplant( obj );
-
-			return tmp.html( supplanted );
+				supplanted = this._supplant( obj );
+			return supplanted;
 		},
 		load: function( r_url, callback, onerror ){
 			var that = this;
@@ -350,8 +349,13 @@ var $ = (function(){
 			}
 		},
 		find: function(selector){
-			var modified = this.selector + ' > ' + selector,
+			var temp = [], modified = '';
+			if(this.selector.nodeType){
+				temp = $(selector, this.get(0));
+			} else {
+				modified = this.selector + ' > ' + selector,
 				temp = $(modified)
+			}
 			return temp;
 			//return $(selector, this[0]);
 		},
@@ -402,6 +406,7 @@ var $ = (function(){
 				(d.getElementsByTagName('head')[0] || d.getElementByTagName('body')[0]).appendChild(script);
 			})(document, script, callback);
 		},
+		
 		text: function(val){
 			if( undefined === val ){
 				return this[0].textContent || "";
@@ -416,7 +421,27 @@ var $ = (function(){
 			return this;
 		},
 		data: function(key, val){
-			this.attr('data', '{' + [ key, val ].join(':') + '}')
+			this.attr('data', '{' + [ key, val ].join(':') + '}');
+			return this;
+		},
+		loadExternal: function(selector, success){
+			var $this = $(this),
+				callable = this._util.is.callable
+			selector = callable(selector) && 'a' || selector || 'a';
+			callback = callable(callback) && callback || this.noop;
+			var elems = $this.is('a') && this || $this.find(selector);
+			
+			this.each(elems, function(){
+				var that = $(this),
+					href = that.attr('href'),
+					uri = new Windows.Foundation.Uri(href);
+					
+				that.onclick(function(){
+					Windows.System.Launcher.launchUriAsync(uri);
+				});
+			});
+			callback.apply(this, [selector]);
+			return this;
 		},
 		get: function(index){
 			return this.eq( index )[0];
@@ -474,17 +499,21 @@ var $ = (function(){
 			}
 		},
 		each: function(collection, callback){
-			var i = 0;
-			if( typeof collection === 'undefined' && this._util.is.callable(callback) ){
+			var i = 0, is = this._util.is;
+			if( typeof collection === 'undefined' && is.callable(callback) ){
 				collection = this.slice(0);
-			} else if ( typeof callback === 'undefined' && this._util.is.callable(collection) ) {
+			} else if ( typeof callback === 'undefined' && is.callable(collection) ) {
 				callback = collection;
 				collection = this;
 			}
 			
-			if( this._util.is.array( collection )){
+			if( is.array( collection )){
 				for( ; i < collection.length; i++ ){
-					callback.apply(collection[i], [ i, collection[i] ]);
+					var context = collection[i];
+					if(typeof context['toUpperCase'] !== 'undefined'){
+						context = this;
+					}
+					callback.apply(context, [ i, collection[i] ]);
 				}
 			} else {
 				for( var attribute in collection ){
@@ -669,7 +698,6 @@ var $ = (function(){
 				}
 				return holder;
 			};
-			console.log('hi')
 			var _qs_params 	= _parse(_qs),
 				_hash_params = _parse(_hash);
 
@@ -703,6 +731,9 @@ var $ = (function(){
 					cur.call( $ )
 				}
 			}
+		},
+		supplant: function(obj, template){
+			return $.fn.supplant(obj, template);
 		},
 		grep: function( elems, callback, inv ) {
 			var ret = [], retVal;
@@ -743,7 +774,6 @@ var $ = (function(){
 	};
 
 	document.addEventListener('DOMContentLoaded', DOMContentLoaded, false);
-
 	return $;
 })(window);
 window.$ = $;

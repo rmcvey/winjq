@@ -11,6 +11,10 @@
 				    'name': 'This is the title',
 				    'body': 'This is the body'
 				});
+				
+				$.require('../src/plugins/badge.js', function(){
+					$('#element-to-add-to-badge').updateBadge();
+				});
 
 				// load remote content directly into an element
 				$('#placeholder').load('ajax/response.html');
@@ -18,10 +22,9 @@
 				// request JSON content
 				$.getJSON('ajax/response.json', function(data){
 					var jresponse = "";
-					for(var i = 0; i < data.length; i++){
-						var template_txt = $('#json-template').html();
-						jresponse += template_txt.supplant(data[i]);
-					}
+					$.each(data, function(){
+						jresponse += $('#json-template').supplant(this);
+					})
 					$('#json-output').append(jresponse);
 				});
 
@@ -85,7 +88,7 @@
 			<h2>{name}</h2>
 			<p>{body}</p>
 		</div>
-		<div id="placeholder" class="border hide">Placeholder</div>
+		<div id="placeholder" class="border">Placeholder</div>
 		<div id="json-container" class="hide">
 
 			<div id="json-template">
