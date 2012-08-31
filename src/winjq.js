@@ -1,4 +1,4 @@
-(function enhance(){
+;(function enhance(){
 	String.prototype.supplant = function(o){
 		o = o || {}
 		return this.replace(/{([^{}]*)}/g,
@@ -9,6 +9,38 @@
 	    );
 	}
 })();
+
+// Implement the identical functionality for filter and not
+function winnow( elements, qualifier, keep ) {
+	qualifier = qualifier || 0;
+
+	if ( $.fn._util.is.callable( qualifier ) ) {
+		return $.grep(elements, function( elem, i ) {
+			var retVal = !!qualifier.call( elem, i, elem );
+			return retVal === keep;
+		});
+
+	} else if ( qualifier.nodeType ) {
+		return $.grep(elements, function( elem, i ) {
+			return ( elem === qualifier ) === keep;
+		});
+
+	} else if ( typeof qualifier === "string" ) {
+		var filtered = $.grep(elements, function( elem ) {
+			return elem.nodeType === 1;
+		});
+
+		if ( isSimple.test( qualifier ) ) {
+			return $.fn.filter(qualifier, filtered, !keep);
+		} else {
+			qualifier = $.fn.filter( qualifier, filtered );
+		}
+	}
+
+	return $.grep(elements, function( elem, i ) {
+		return ( $.fn._util.is.array( elem, qualifier ) >= 0 ) === keep;
+	});
+}
 
 if(typeof window['toStaticHTML'] === 'undefined'){
 	window.toStaticHTML = function(val){return val;}
@@ -86,11 +118,13 @@ var $ = (function(){
 				this.context = document;
 				this[0] = document.body;
 				this.selector = selector;
+				this.context = context;
 				this.length = 1;
 				return this;
 			}
 			if( selector && typeof selector['toUpperCase'] !== 'undefined' ) {
 				this.selector = selector;
+				this.context = context;
 				var elems = context.querySelectorAll(selector), i = 0;
 				this.length = elems.length;
 				for(; i < this.length; i++){
@@ -163,7 +197,6 @@ var $ = (function(){
 			return this;
 		},
 		removeClass: function( klass ){
-			console.log('hello guvna')
 			this.each(function(){
 				var cl = this.getAttribute('class');
 				cl = cl.replace(klass, '');
@@ -187,8 +220,9 @@ var $ = (function(){
 		},
 		on: function( action, selector, callback){
 			this.each(function( index, domNode ){
-				this.addEventListener( action, function(e){
-					callback.apply(this, [e])
+				var that = this;
+				that.addEventListener( action, function(e){
+					callback.apply(that, [e, that])
 				}, true);
 			});
 		},
@@ -198,6 +232,25 @@ var $ = (function(){
 					callback.apply(this, [e])
 				}, false);
 			});
+		},
+		submit: function( callback ){
+			var elem = this.get(0);
+			elem.onsubmit = function(e){
+				return callback.apply(elem, [e, elem]);
+			}
+		},
+		hover: function( mover, mout ){
+			if(this._util.is.callable(mover)){
+				this.on('mouseover', null, function(e){
+					mover.apply(this, [e, this]);
+				})
+			}
+			if(this._util.is.callable(mout)){
+				this.on('mouseout', null, function(e){
+					mout.apply(this, [e, this]);
+				});
+			}
+			return this;
 		},
 		ready: function(fn){
 			if( this._util.is.callable(fn) ){
@@ -283,7 +336,10 @@ var $ = (function(){
 			}
 		},
 		find: function(selector){
-			return $(selector, this[0]);
+			var modified = this.selector + ' > ' + selector,
+				temp = $(modified)
+			return temp;
+			//return $(selector, this[0]);
 		},
 		merge: function(obj1, obj2){
 			var attr;
@@ -294,11 +350,36 @@ var $ = (function(){
 			}
 			return obj1;
 		},
+		has: function(selector){
+			return this.find(selector).size() > 0 ? true : false;
+		},
+		filter: function(selector){
+			return this.pushStack( winnow(this, selector, true), "filter", selector );
+		},
+		is: function(selector){
+			return !!selector && (
+				typeof selector === "string" ?
+				$( selector, this.context ).index( this[0] ) >= 0 :
+				this.filter( selector ).length > 0
+			);
+		},
+		dir: function( elem, dir, until ) {
+			var matched = [],
+				cur = elem[ dir ];
+
+			while ( cur && cur.nodeType !== 9 && (until === undefined || cur.nodeType !== 1 || !$( cur ).is( until )) ) {
+				if ( cur.nodeType === 1 ) {
+					matched.push( cur );
+				}
+				cur = cur[dir];
+			}
+			return matched;
+		},
 		parent: function(){
 			return $(this[0].parentNode);
 		},
 		parents: function(selector){
-			
+			return this.dir( this[0], "parentNode" ).slice(0, 1);
 		},
 		require: function(script, callback){
 			(function loadscript(d, source, cb){
@@ -321,10 +402,31 @@ var $ = (function(){
 			return this;
 		},
 		data: function(key, val){
-			this.attr('data', '{'+key+':'+val+'}')
+			this.attr('data', '{' + [ key, val ].join(':') + '}')
 		},
 		get: function(index){
 			return this.eq( index )[0];
+		},
+		index: function(node){
+			return this.indexOf( $(node).get(0) );
+		},
+		lookUntil: function(condition, direction){
+			var elem = this.get(0),
+				cond = condition || function(){return true;},
+				direction = direction || 'nextSibling'
+			if(!elem){
+				return false;
+			}
+			do {
+		        elem = elem[direction];
+		    } while ((elem && elem.nodeType != 1) && cond.apply(elem, [elem.nodeType]));
+		    return $(elem);
+		},
+		next: function(){
+			return this.lookUntil(undefined, 'nextSibling');
+		},
+		prev: function(){
+			return this.lookUntil(undefined, 'previousSibling');
 		},
 		attr: function(key, val){
 			if( !this._util.is.object(key) && typeof val === 'undefined' ){
@@ -379,10 +481,31 @@ var $ = (function(){
 			}
 			return this;
 		},
+		pushStack: function( elems, name, selector ) {
+			var ret = this.constructor();
+
+			if ( this._util.is.array( elems ) ) {
+				push.apply( ret, elems );
+
+			} else {
+				this.merge( ret, elems );
+			}
+
+			ret.prevObject = this;
+			ret.context = this.context;
+
+			if ( name === "find" ) {
+				ret.selector = this.selector + ( this.selector ? " " : "" ) + selector;
+			} else if ( name ) {
+				ret.selector = this.selector + "." + name + "(" + selector + ")";
+			}
+			return ret;
+		},
 		slice: [].slice,
 		push: [].push,
 		sort: [].sort,
 		splice: [].splice,
+		indexOf: [].indexOf,
 		noop: function(){},
 		ajax: function( options ){
 			var win_options = {
@@ -533,8 +656,8 @@ var $ = (function(){
 				return holder;
 			};
 
-			var _qs_params 	= _parse(_qs);
-			var _hash_params = _parse(_hash);
+			var _qs_params 	= _parse(_qs),
+				_hash_params = _parse(_hash);
 
 			return {
 				href:_href,
@@ -566,6 +689,36 @@ var $ = (function(){
 					cur.call( $ )
 				}
 			}
+		},
+		grep: function( elems, callback, inv ) {
+			var ret = [], retVal;
+			inv = !!inv;
+			for ( var i = 0, length = elems.length; i < length; i++ ) {
+				retVal = !!callback( elems[ i ], i );
+				if ( inv !== retVal ) {
+					ret.push( elems[ i ] );
+				}
+			}
+
+			return ret;
+		},
+		inArray: function( elem, array, i ) {
+			var len;
+			if ( array ) {
+				if ( indexOf ) {
+					return indexOf.call( array, elem, i );
+				}
+				len = array.length;
+				i = i ? i < 0 ? Math.max( 0, len + i ) : i : 0;
+
+				for ( ; i < len; i++ ) {
+					// Skip accessing in sparse arrays
+					if ( i in array && array[ i ] === elem ) {
+						return i;
+					}
+				}
+			}
+			return -1;
 		}
 	});
 

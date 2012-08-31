@@ -25,6 +25,12 @@
 					$('#json-output').append(jresponse);
 				});
 
+				$('.product').hover(function(){
+				    $(this).css('background-color', 'black');
+				}, function(){
+				    $(this).css('background-color', 'white');
+				});
+
 				// attach an onclick event handler
 				$('h2').click(function(){
 					console.log(this);
@@ -50,8 +56,11 @@
 			<a href="/foo">Foo</a> | <a href="http://www.example.com/foo" onclick="track(this); return false;">Example Foo</a>
 		</div>
 		<div class="border">
-			<label>Search</label>
-			<input type="text" id="search" name="foo" value="" />
+			<form action="#" id="myform">
+				<label>Search</label>
+				<input type="text" id="search" name="search" value="" />
+				<input type="submit" value="Go!" />
+			</form>
 		</div>
 		<div id="cart" class="border">
 			<h2>Cart Example</h2>
