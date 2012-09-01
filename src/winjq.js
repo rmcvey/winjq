@@ -399,12 +399,12 @@ var $ = (function(){
 		parents: function(selector){
 			return this.dir( this[0], "parentNode" ).slice(0, 1);
 		},
-		require: function(script, callback){
-			(function loadscript(d, source, cb){
+		require: function(script, callback, error){
+			(function loadscript(d, source, cb, err){
 				var script = d.createElement('script'); script.async = true; script.src = source;
-				script.type = 'text/javascript'; script.onload = cb || function(e){};
+				script.type = 'text/javascript'; script.onload = cb || $.fn.noop; script.onerror = err || $.fn.noop;
 				(d.getElementsByTagName('head')[0] || d.getElementByTagName('body')[0]).appendChild(script);
-			})(document, script, callback);
+			})(document, script, callback, error);
 		},
 		
 		text: function(val){
