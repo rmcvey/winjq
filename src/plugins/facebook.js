@@ -5,14 +5,12 @@
 		function launchFacebookWebAuth(params) 
 		{
 			var facebookURL = "https://www.facebook.com/dialog/oauth?client_id=";
-			var clientID = "";
-			var callbackURL = "https://www.facebook.com/connect/login_success.html";
-			facebookURL += clientID + "&redirect_uri=" + encodeURIComponent(callbackURL) + "&scope=read_stream&display=popup&response_type=token";
+			facebookURL += params.client_id + "&redirect_uri=" + encodeURIComponent(params.callback_url) + "&scope="+params.scope.join(',')+"&display="+params.display+"&response_type="+params.response_type;
 
 			try 
 			{
 				var startURI = new Windows.Foundation.Uri(facebookURL);
-				var endURI = new Windows.Foundation.Uri(callbackURL);
+				var endURI = new Windows.Foundation.Uri(params.callbackURL);
 
 				Windows.Security.Authentication.Web.WebAuthenticationBroker.authenticateAsync(
 					Windows.Security.Authentication.Web.WebAuthenticationOptions.default,
@@ -25,13 +23,14 @@
 		function callbackFacebookWebAuth(result) 
 		{
 			var FacebookReturnedToken = result.responseData;
-			authToken = FacebookReturnedToken;
-			authResponse = "Status returned by WebAuth broker: " + result.responseStatus + "\r\n";
+			$.facebook.token = FacebookReturnedToken;
+			$.facebook.response = result.responseData;
+			$.facebook.response_status = result.responseStatus;
 			if(result.responseStatus == 2)
 			{
-				response += "Error returned: "+ result.responseErrorDetail +"\r\n";
+				$.facebook.response += "Error returned: "+ result.responseErrorDetail +"\r\n";
 			}
-			return response;
+			return $.facebook.response;
 		}
 
 		function callbackFacebookWebAuthError(err) 
@@ -39,24 +38,26 @@
 			var error = "Error returned by WebAuth broker. Error Number: " + err.number + " Error Message: " + err.message + "\r\n";
 		}
 		$.extend({
-			facebook: (function(options){
+			facebook: (function(){
 				var defaults = {
-						clientID: '',
+						client_id: '',
 						scope: ['read_stream'],
 						display: 'popup',
-						response_type: 'token'
-					},
-					params = $.merge(defaults, options);
-				
+						response_type: 'token',
+						callback_url: 'https://www.facebook.com/connect/login_success.html'
+					};
 				
 				return {
-					auth: function(){
+					authorize: function(options){
+						var params = $.merge(defaults, options);
 						launchFacebookWebAuth.apply(this, [params])
+						return this.response_code == 2;
 					},
-					token: authToken,
-					response: authResponse
+					token: '',
+					response: '',
+					response_code: ''
 				};
-			})()
+			})();
 		});
 	}, function session_load_error(e){
 			throw "Unable to add facebook plugin because session failed to load"
