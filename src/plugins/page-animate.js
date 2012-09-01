@@ -10,8 +10,7 @@
 				var context = $this[0];
 				return fn_error.apply(context, [context]);
 			},
-			defaults = { top: "12px", left: "0px", rtlflip: true },
-			params = $.merge(defaults, options),
+			params = options || null,
 			direction = dir || 'enterPage';
 		
 		WinJS.UI.Animation[direction](element, params).done(
@@ -20,9 +19,23 @@
 		return this;
 	};
 	$.fn.enterPage = function(options, fn_success, fn_error){
+		if(this._util.is.callable(options)){
+			fn_success = options;
+			fn_error = fn_success;
+			options = null;
+		} else if(!options){
+			options = null;
+		}
 		return $(this).pageAnimate('enterPage', options, fn_success, fn_error);
 	};
 	$.fn.exitPage = function(options, fn_success, fn_error){
+		if(this._util.is.callable(options)){
+			fn_success = options;
+			fn_error = fn_success;
+			options = null;
+		} else if(!options){
+			options = null;
+		}
 		return $(this).pageAnimate('exitPage', options, fn_success, fn_error);
 	};
 })(window.$);

@@ -1,7 +1,7 @@
 ;(function($){
 	$.fn.badgeUpdate(options, fn_success, fn_error){
 		var incoming = $(this),
-			defaults = { top: "12px", left: "0px", rtlflip: true },
+			defaults = options || null,
 			params = $.merge(defaults, options),
 			success = function(elem){
 				var context = $this[0];
