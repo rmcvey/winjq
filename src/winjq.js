@@ -223,6 +223,9 @@ var $ = (function(){
 			return false;
 		},
 		on: function( action, selector, callback){
+			if(this._util.is.callable(selector)){
+				callback = selector;
+			}
 			this.each(function( index, domNode ){
 				var that = this;
 				that.addEventListener( action, function(e){
